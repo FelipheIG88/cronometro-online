@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contagem Regressiva</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+#app { min-height: 100vh; display: grid; place-items: center; padding: 32px; background: light-dark(#f5f7f8, #0d1110); color: light-dark(#18201d, #eef4f1); }
+.card { width: min(980px, 100%); text-align: center; padding: 52px 32px; border: 1px solid light-dark(#dce3e0, #29332f); border-radius: 28px; background: light-dark(#ffffff, #151c19); box-shadow: 0 20px 60px #0002; }
+.label { font-size: 14px; letter-spacing: .14em; text-transform: uppercase; opacity: .65; }
+h1 { margin: 12px 0 32px; font-size: clamp(28px, 5vw, 52px); }
+.timer { display: flex; justify-content: center; gap: clamp(8px, 2vw, 20px); flex-wrap: wrap; }
+.unit { min-width: clamp(72px, 15vw, 150px); }
+.num { font-variant-numeric: tabular-nums; font-size: clamp(48px, 10vw, 104px); font-weight: 750; line-height: 1; }
+.caption { margin-top: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; opacity: .55; }
+.done { color: #b42318; }
+.date { margin-top: 28px; font-size: 14px; opacity: .6; }
+.share { margin-top: 28px; display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+button { border: 1px solid light-dark(#cbd5d1, #34413c); background: light-dark(#eef3f1, #202a26); color: inherit; border-radius: 12px; padding: 11px 16px; font: inherit; cursor: pointer; }
+button:hover { filter: brightness(.96); }
+.hint { margin-top: 14px; font-size: 12px; opacity: .5; }
+</style>
+</head>
+<body>
+<div id="app"><main class="card">
+  <div class="label">Contagem regressiva</div>
+  <h1 id="title">Aguardando...</h1>
+  <section class="timer" aria-live="polite">
+    <div class="unit"><div class="num" id="days">00</div><div class="caption">dias</div></div>
+    <div class="unit"><div class="num" id="hours">00</div><div class="caption">horas</div></div>
+    <div class="unit"><div class="num" id="minutes">00</div><div class="caption">minutos</div></div>
+    <div class="unit"><div class="num" id="seconds">00</div><div class="caption">segundos</div></div>
+  </section>
+  <div class="date" id="dateLabel"></div>
+  <div class="share"><button id="copyBtn" type="button">Copiar link</button><button id="fullscreenBtn" type="button">Tela cheia</button></div>
+  <div class="hint">O tempo é calculado pela data/hora definida no link.</div>
+</main></div>
+<script>
+const params = new URLSearchParams(location.search);
+const title = params.get('titulo') || 'Contagem regressiva';
+const targetText = params.get('data') || '2026-12-31T23:59:59-03:00';
+const targetDate = new Date(targetText);
+const target = targetDate.getTime();
+document.getElementById('title').textContent = title;
+if (!Number.isFinite(target)) document.getElementById('title').textContent = 'Data inválida';
+else document.getElementById('dateLabel').textContent = 'Término: ' + targetDate.toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'medium' });
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(location.href);
+    document.getElementById('copyBtn').textContent = 'Link copiado!';
+    setTimeout(() => document.getElementById('copyBtn').textContent = 'Copiar link', 1800);
+  } catch { document.getElementById('copyBtn').textContent = 'Copie o endereço do navegador'; }
+});
+document.getElementById('fullscreenBtn').addEventListener('click', async () => {
+  if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+  else await document.exitFullscreen?.();
+});
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function update() {
+  if (!Number.isFinite(target)) return;
+  let diff = Math.max(0, target - Date.now());
+  const total = Math.floor(diff / 1000);
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  document.getElementById('days').textContent = pad(days);
+  document.getElementById('hours').textContent = pad(hours);
+  document.getElementById('minutes').textContent = pad(minutes);
+  document.getElementById('seconds').textContent = pad(seconds);
+  if (diff === 0) {
+    document.getElementById('title').textContent = title || 'Tempo encerrado';
+    document.querySelector('.card').classList.add('done');
+    return;
+  }
+  setTimeout(update, 250);
+}
+update();
+</script>
+</body>
+</html>
